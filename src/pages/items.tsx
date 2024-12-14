@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../lib/api';
+import Link from 'next/link';
 
 interface Item {
   id: number;
@@ -25,7 +26,9 @@ export default function Items() {
       <ul>
         {items.map(item => (
           <li key={item.id}>
-            <strong>{item.name}</strong> - {item.description} (Category: {item.category.name})
+            <Link href={`/items/${item.id}`}>
+              <a>{item.name}</a>
+            </Link>
           </li>
         ))}
       </ul>
