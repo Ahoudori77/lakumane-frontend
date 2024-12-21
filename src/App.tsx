@@ -1,13 +1,15 @@
 import React from 'react';
-import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import NotificationHistoryPage from './pages/NotificationHistoryPage';
+import UnreadNotificationsList from "./components/NotificationsList";
 
-const App = () => (
+const App: React.FC = () => (
   <Router>
-    <Switch>
-      {/* Other Routes */}
-      <Route path="/notifications/history" component={NotificationHistoryPage} />
-    </Switch>
+    <Routes>
+      {/* その他のルート */}
+      <Route path="/notifications/history" element={<NotificationHistoryPage />} />
+      <Route path="/notifications/unread" element={<UnreadNotificationsList />} />
+    </Routes>
   </Router>
 );
 

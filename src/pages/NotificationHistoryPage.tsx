@@ -1,8 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { getNotifications } from '../services/notifications';
 
-const NotificationHistoryPage = () => {
-  const [notifications, setNotifications] = useState([]);
+interface Notification {
+  id: number;
+  message: string;
+  created_at: string;
+  read: boolean;
+}
+
+const NotificationHistoryPage: React.FC = () => {
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
 
@@ -14,7 +21,7 @@ const NotificationHistoryPage = () => {
           client: localStorage.getItem('client') || '',
           uid: localStorage.getItem('uid') || '',
         };
-        const data = await getNotifications({ page }, authHeaders);
+        const data = await getNotifications(page, authHeaders);
         setNotifications(data.notifications);
       } catch (error) {
         console.error('Failed to fetch notifications:', error);

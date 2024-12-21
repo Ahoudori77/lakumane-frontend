@@ -60,7 +60,8 @@ const UnreadNotificationsList: React.FC = () => {
       <ul>
         {notifications.map((notification) => (
           <li key={notification.id}>
-            {notification.message} - {new Date(notification.created_at).toLocaleString()}
+            {notification.message} -{" "}
+            {new Date(notification.created_at).toLocaleString()}
           </li>
         ))}
       </ul>

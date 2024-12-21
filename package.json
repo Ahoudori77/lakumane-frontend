@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 3001",
     "lint": "next lint"
   },
   "dependencies": {
@@ -13,13 +13,16 @@
     "axios": "^1.7.9",
     "next": "15.1.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-router-dom": "^7.1.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@types/node": "^20.17.10",
+    "@types/rails__actioncable": "^6.1.11",
     "@types/react": "^19.0.1",
     "@types/react-dom": "^19",
+    "@types/react-router-dom": "^5.3.3",
     "eslint": "^9",
     "eslint-config-next": "15.1.0",
     "postcss": "^8",
