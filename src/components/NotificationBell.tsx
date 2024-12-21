@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import cable from "../lib/cable";
-import { getUnreadNotifications } from "../services/notifications";
+import axios from "axios";
 
 interface Notification {
   id: number;
@@ -9,39 +9,35 @@ interface Notification {
   created_at: string;
 }
 
-const UnreadNotificationsList: React.FC = () => {
+const NotificationBell: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // Fetch unread notifications from the server
   useEffect(() => {
-    const fetchUnreadNotifications = async () => {
-      const authHeaders = {
-        "access-token": localStorage.getItem("access-token") || "",
-        client: localStorage.getItem("client") || "",
-        uid: localStorage.getItem("uid") || "",
-      };
-
+    // 未読通知件数の取得
+    const fetchUnreadCount = async () => {
       try {
-        const data = await getUnreadNotifications(authHeaders);
-        setNotifications(data);
-        setUnreadCount(data.length);
+        const authHeaders = {
+          "access-token": localStorage.getItem("access-token") || "",
+          client: localStorage.getItem("client") || "",
+          uid: localStorage.getItem("uid") || "",
+        };
+        const response = await axios.get("/api/v1/notifications/unread_count", { headers: authHeaders });
+        setUnreadCount(response.data.unread_count);
       } catch (error) {
-        console.error("Error fetching unread notifications:", error);
+        console.error("Failed to fetch unread count:", error);
       }
     };
 
-    fetchUnreadNotifications();
-  }, []);
+    fetchUnreadCount();
 
-  // Subscribe to WebSocket notifications
-  useEffect(() => {
+    // WebSocketでリアルタイム更新
     const subscription = cable.subscriptions.create(
       { channel: "NotificationsChannel" },
       {
         received: (data: Notification) => {
           setNotifications((prev) => [data, ...prev]);
-          setUnreadCount((prev) => prev + 1);
+          setUnreadCount((prev) => prev + 1); // 新しい通知をカウント
         },
       }
     );
@@ -53,7 +49,6 @@ const UnreadNotificationsList: React.FC = () => {
 
   return (
     <div>
-      <h2>Unread Notifications</h2>
       <button>
         🔔 Notifications ({unreadCount})
       </button>
@@ -68,4 +63,4 @@ const UnreadNotificationsList: React.FC = () => {
   );
 };
 
-export default UnreadNotificationsList;
+export default NotificationBell;

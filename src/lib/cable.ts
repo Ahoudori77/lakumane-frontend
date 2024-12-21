@@ -1,5 +1,5 @@
-import { createConsumer } from '@rails/actioncable';
+import { createConsumer } from "@rails/actioncable";
 
-const cable = createConsumer(process.env.NEXT_PUBLIC_CABLE_URL);
+const cable = createConsumer(process.env.REACT_APP_CABLE_URL || "ws://localhost:3000/cable");
 
 export default cable;

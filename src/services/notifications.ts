@@ -22,3 +22,10 @@ export const markNotificationAsRead = async (id: number, authHeaders: Record<str
     throw error;
   }
 };
+
+export const getUnreadNotifications = async (authHeaders: Record<string, string>) => {
+  const response = await axios.get('/api/v1/notifications/unread', {
+    headers: authHeaders,
+  });
+  return response.data;
+};
