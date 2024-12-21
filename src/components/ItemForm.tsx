@@ -1,25 +1,32 @@
-import { useState } from 'react';
-import api from '../lib/api';
+import React, { useState } from 'react';
 
-export default function ItemForm({ item, onSubmit }: any) {
-  const [formData, setFormData] = useState(item || {});
+interface FormData {
+  name: string;
+  description: string;
+  quantity: number;
+}
 
-  const handleChange = (e: any) => {
+const ItemForm = () => {
+  const [formData, setFormData] = useState<FormData>({ name: '', description: '', quantity: 0 });
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e: any) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    await onSubmit(formData);
+    console.log(formData);
   };
 
   return (
     <form onSubmit={handleSubmit}>
-      <input name="name" value={formData.name || ''} onChange={handleChange} placeholder="Item Name" required />
-      <textarea name="description" value={formData.description || ''} onChange={handleChange} placeholder="Description" />
-      {/* 他のフィールドを追加 */}
+      <input name="name" value={formData.name} onChange={handleInputChange} placeholder="Name" />
+      <input name="description" value={formData.description} onChange={handleInputChange} placeholder="Description" />
+      <input name="quantity" type="number" value={formData.quantity} onChange={handleInputChange} placeholder="Quantity" />
       <button type="submit">Submit</button>
     </form>
   );
-}
+};
+
+export default ItemForm;
