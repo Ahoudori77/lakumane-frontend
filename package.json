@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@rails/actioncable": "^8.0.100",
     "axios": "^1.7.9",
     "next": "15.1.0",
     "react": "^19.0.0",
