@@ -1,71 +1,92 @@
-import React, { useState, useEffect } from 'react';
+// pages/orders/[id]/edit.tsx
 import { useRouter } from 'next/router';
+import { useEffect, useState } from 'react';
 import api from '../../../lib/api';
+
+interface Order {
+  id: number;
+  quantity: number;
+  status: string;
+  supplier_info: string;
+}
 
 const EditOrderPage = () => {
   const router = useRouter();
   const { id } = router.query;
-  const [order, setOrder] = useState({
-    item_id: '',
-    quantity: 1,
-    status: 'pending',
-    supplier_info: '',
-  });
+  const [order, setOrder] = useState<Order | null>(null);
+  const [quantity, setQuantity] = useState<number>(1);
+  const [status, setStatus] = useState<string>('pending');
+  const [supplierInfo, setSupplierInfo] = useState<string>('');
 
   useEffect(() => {
     if (id) {
+      const fetchOrder = async () => {
+        try {
+          const response = await api.get(`/orders/${id}`);
+          const orderData = response.data;
+          setOrder(orderData);
+          setQuantity(orderData.quantity);
+          setStatus(orderData.status);
+          setSupplierInfo(orderData.supplier_info);
+        } catch (error) {
+          console.error('Error fetching order:', error);
+        }
+      };
       fetchOrder();
     }
   }, [id]);
 
-  const fetchOrder = async () => {
-    const response = await api.get(`/orders/${id}`);
-    setOrder(response.data);
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await api.put(`/orders/${id}`, {
+        order: {
+          quantity,
+          status,
+          supplier_info: supplierInfo,
+        },
+      });
+      alert('オーダーが更新されました');
+      router.push(`/orders/${id}`);  // 詳細ページにリダイレクト
+    } catch (error) {
+      console.error('Error updating order:', error);
+      alert('オーダーの更新に失敗しました');
+    }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await api.put(`/orders/${id}`, order);
-    router.push('/orders');
-  };
+  if (!order) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div>
       <h1>オーダー編集</h1>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleUpdate}>
         <div>
-          <label>アイテムID</label>
-          <input
-            type="text"
-            value={order.item_id}
-            onChange={(e) => setOrder({ ...order, item_id: e.target.value })}
-          />
-        </div>
-        <div>
-          <label>数量</label>
+          <label>数量:</label>
           <input
             type="number"
-            value={order.quantity}
-            onChange={(e) => setOrder({ ...order, quantity: parseInt(e.target.value, 10) })}
+            value={quantity}
+            onChange={(e) => setQuantity(Number(e.target.value))}
+            required
           />
         </div>
         <div>
-          <label>ステータス</label>
-          <select
-            value={order.status}
-            onChange={(e) => setOrder({ ...order, status: e.target.value })}
-          >
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
+          <label>ステータス:</label>
+          <select value={status} onChange={(e) => setStatus(e.target.value)}>
+            <option value="pending">保留</option>
+            <option value="approved">承認済み</option>
+            <option value="rejected">拒否</option>
+            <option value="completed">完了</option>
           </select>
         </div>
         <div>
-          <label>サプライヤー情報</label>
+          <label>サプライヤー情報:</label>
           <input
             type="text"
-            value={order.supplier_info}
-            onChange={(e) => setOrder({ ...order, supplier_info: e.target.value })}
+            value={supplierInfo}
+            onChange={(e) => setSupplierInfo(e.target.value)}
+            required
           />
         </div>
         <button type="submit">更新</button>

@@ -1,13 +1,16 @@
 // pages/orders/index.tsx
-import { useEffect, useState } from 'react';
-import api from '../../lib/api';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import api from '../../lib/api';
 
 interface Order {
   id: number;
-  item: { name: string };
   quantity: number;
   status: string;
+  supplier_info: string;
+  item: {
+    name: string;
+  };
 }
 
 const OrdersPage = () => {
@@ -22,53 +25,44 @@ const OrdersPage = () => {
         console.error('Error fetching orders:', error);
       }
     };
+
     fetchOrders();
   }, []);
 
-  const handleDelete = async (id: number) => {
-    if (window.confirm('本当にこのオーダーを削除しますか？')) {
-      try {
-        await api.delete(`/orders/${id}`);
-        setOrders(orders.filter((order) => order.id !== id));  // 削除後に一覧を更新
-        alert('オーダーが削除されました');
-      } catch (error) {
-        console.error('Error deleting order:', error);
-        alert('削除に失敗しました');
-      }
-    }
-  };
-
-  const handleExportCSV = async () => {
-    try {
-      const response = await api.get('/orders/export_csv', { responseType: 'blob' });
-      const blob = new Blob([response.data], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'orders.csv';
-      a.click();
-    } catch (error) {
-      console.error('Error exporting CSV:', error);
-    }
-  };
-
   return (
     <div>
-      <h1>オーダー一覧</h1>
-      <button onClick={handleExportCSV}>CSVエクスポート</button>
-      <ul>
-        {orders.map((order) => (
-          <li key={order.id}>
-            {order.item.name} - {order.quantity} 個 ({order.status})
-            <Link href={`/orders/${order.id}/edit`}>
-              <button>編集</button>
-            </Link>
-            <button onClick={() => handleDelete(order.id)} style={{ marginLeft: '10px', color: 'red' }}>
-              削除
-            </button>
-          </li>
-        ))}
-      </ul>
+      <h1>発注一覧</h1>
+      <Link href="/orders/new">
+        <button>新規発注</button>
+      </Link>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>アイテム名</th>
+            <th>数量</th>
+            <th>サプライヤー</th>
+            <th>ステータス</th>
+            <th>詳細</th>
+          </tr>
+        </thead>
+        <tbody>
+          {orders.map((order) => (
+            <tr key={order.id}>
+              <td>{order.id}</td>
+              <td>{order.item.name}</td>
+              <td>{order.quantity}</td>
+              <td>{order.supplier_info}</td>
+              <td>{order.status}</td>
+              <td>
+                <Link href={`/orders/${order.id}`}>
+                  詳細を見る
+                </Link>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 };
