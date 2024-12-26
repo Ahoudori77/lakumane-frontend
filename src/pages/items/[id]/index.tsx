@@ -1,54 +1,67 @@
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
-import api from '../../../lib/api';
 
-type Item = {
+interface Item {
   id: number;
   name: string;
   description: string;
+  category: {
+    name: string;
+  };
   current_quantity: number;
-  optimal_quantity: number;
-  reorder_threshold: number;
-  price: number;
-};
+  shelf_number: string;
+}
 
-export default function ItemDetails() {
+const ItemDetailPage: React.FC = () => {
+  const [item, setItem] = useState<Item | null>(null);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
   const router = useRouter();
   const { id } = router.query;
-  const [item, setItem] = useState<Item | null>(null);
 
-  // Fetch item details
+  // アイテム情報取得
   useEffect(() => {
     if (id) {
-      api
-        .get(`/items/${id}`)
-        .then((res) => setItem(res.data))
-        .catch(console.error);
+      axios.get(`/api/v1/items/${id}`)
+        .then((response) => setItem(response.data))
+        .catch(() => setErrorMessage('アイテム情報の取得に失敗しました'));
     }
   }, [id]);
 
-  // Delete item handler
+  // 削除処理
   const handleDelete = async () => {
+    if (!window.confirm('本当に削除しますか？')) return;
+
+    setIsDeleting(true);
     try {
-      await api.delete(`/items/${id}`);
+      await axios.delete(`/api/v1/items/${id}`);
+      alert('アイテムが削除されました');
       router.push('/items');
     } catch (error) {
-      console.error(error);
+      setErrorMessage('アイテムの削除に失敗しました');
+      console.error('Error deleting item:', error);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
-  // Loading state
-  if (!item) return <div>Loading...</div>;
+  if (!item) return <p>Loading...</p>;
 
   return (
     <div>
       <h1>{item.name}</h1>
-      <p>{item.description}</p>
-      <p>Current Quantity: {item.current_quantity}</p>
-      <p>Optimal Quantity: {item.optimal_quantity}</p>
-      <p>Reorder Threshold: {item.reorder_threshold}</p>
-      <p>Price: {item.price}</p>
-      <button onClick={handleDelete}>Delete Item</button>
+      <p>説明: {item.description}</p>
+      <p>カテゴリ: {item.category.name}</p>
+      <p>在庫数: {item.current_quantity}</p>
+      <p>棚番号: {item.shelf_number}</p>
+
+      <button onClick={() => router.push(`/items/${id}/edit`)}>編集</button>
+      <button onClick={handleDelete} disabled={isDeleting}>
+        {isDeleting ? '削除中...' : '削除'}
+      </button>
     </div>
   );
-}
+};
+
+export default ItemDetailPage;
