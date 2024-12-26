@@ -14,7 +14,7 @@ const LoginForm: React.FC = () => {
       const { data } = response;
       localStorage.setItem("access-token", response.headers["access-token"] || "");
       localStorage.setItem("client", response.headers["client"] || "");
-      localStorage.setItem("uid", data.uid || "");
+      localStorage.setItem("uid", response.headers["uid"] || "");
       alert("Login successful!");
       window.location.href = "/dashboard";  // 遷移先を適宜変更
     } catch (error) {
