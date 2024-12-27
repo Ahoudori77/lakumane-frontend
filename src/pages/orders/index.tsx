@@ -1,16 +1,14 @@
-// pages/orders/index.tsx
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import api from '../../lib/api';
+import Link from 'next/link';
 
 interface Order {
   id: number;
-  quantity: number;
-  status: string;
-  supplier_info: string;
   item: {
     name: string;
   };
+  quantity: number;
+  status: string;
 }
 
 const OrdersPage = () => {
@@ -25,44 +23,42 @@ const OrdersPage = () => {
         console.error('Error fetching orders:', error);
       }
     };
-
     fetchOrders();
   }, []);
+
+  const handleDelete = async (id: number) => {
+    const confirmDelete = window.confirm('本当に削除しますか？');
+    if (confirmDelete) {
+      try {
+        await api.delete(`/orders/${id}`);
+        alert('発注が削除されました');
+        setOrders(orders.filter((order) => order.id !== id));
+      } catch (error) {
+        console.error('Error deleting order:', error);
+        alert('削除に失敗しました');
+      }
+    }
+  };
 
   return (
     <div>
       <h1>発注一覧</h1>
       <Link href="/orders/new">
-        <button>新規発注</button>
+        <button>新規作成</button>
       </Link>
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>アイテム名</th>
-            <th>数量</th>
-            <th>サプライヤー</th>
-            <th>ステータス</th>
-            <th>詳細</th>
-          </tr>
-        </thead>
-        <tbody>
-          {orders.map((order) => (
-            <tr key={order.id}>
-              <td>{order.id}</td>
-              <td>{order.item.name}</td>
-              <td>{order.quantity}</td>
-              <td>{order.supplier_info}</td>
-              <td>{order.status}</td>
-              <td>
-                <Link href={`/orders/${order.id}`}>
-                  詳細を見る
-                </Link>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <ul>
+        {orders.map((order) => (
+          <li key={order.id}>
+            {order.item.name} - 数量: {order.quantity} - ステータス: {order.status}
+            <Link href={`/orders/${order.id}/edit`}>
+              <button>編集</button>
+            </Link>
+            <button onClick={() => handleDelete(order.id)} style={{ marginLeft: '10px' }}>
+              削除
+            </button>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 };

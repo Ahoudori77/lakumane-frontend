@@ -1,10 +1,12 @@
-// pages/orders/[id]/edit.tsx
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
 import api from '../../../lib/api';
 
 interface Order {
   id: number;
+  item: {
+    name: string;
+  };
   quantity: number;
   status: string;
   supplier_info: string;
@@ -14,20 +16,23 @@ const EditOrderPage = () => {
   const router = useRouter();
   const { id } = router.query;
   const [order, setOrder] = useState<Order | null>(null);
-  const [quantity, setQuantity] = useState<number>(1);
-  const [status, setStatus] = useState<string>('pending');
-  const [supplierInfo, setSupplierInfo] = useState<string>('');
+  const [formData, setFormData] = useState({
+    quantity: 1,
+    status: 'pending',
+    supplier_info: '',
+  });
 
   useEffect(() => {
     if (id) {
       const fetchOrder = async () => {
         try {
           const response = await api.get(`/orders/${id}`);
-          const orderData = response.data;
-          setOrder(orderData);
-          setQuantity(orderData.quantity);
-          setStatus(orderData.status);
-          setSupplierInfo(orderData.supplier_info);
+          setOrder(response.data);
+          setFormData({
+            quantity: response.data.quantity,
+            status: response.data.status,
+            supplier_info: response.data.supplier_info,
+          });
         } catch (error) {
           console.error('Error fetching order:', error);
         }
@@ -36,21 +41,19 @@ const EditOrderPage = () => {
     }
   }, [id]);
 
-  const handleUpdate = async (e: React.FormEvent) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await api.put(`/orders/${id}`, {
-        order: {
-          quantity,
-          status,
-          supplier_info: supplierInfo,
-        },
-      });
-      alert('オーダーが更新されました');
-      router.push(`/orders/${id}`);  // 詳細ページにリダイレクト
+      await api.patch(`/orders/${id}`, formData);
+      alert('発注が更新されました');
+      router.push('/orders');
     } catch (error) {
       console.error('Error updating order:', error);
-      alert('オーダーの更新に失敗しました');
+      alert('発注の更新に失敗しました');
     }
   };
 
@@ -60,35 +63,36 @@ const EditOrderPage = () => {
 
   return (
     <div>
-      <h1>オーダー編集</h1>
-      <form onSubmit={handleUpdate}>
-        <div>
-          <label>数量:</label>
+      <h1>発注編集</h1>
+      <form onSubmit={handleSubmit}>
+        <p>アイテム名: {order.item.name}</p>
+        <label>
+          数量:
           <input
             type="number"
-            value={quantity}
-            onChange={(e) => setQuantity(Number(e.target.value))}
-            required
+            name="quantity"
+            value={formData.quantity}
+            min="1"
+            onChange={handleInputChange}
           />
-        </div>
-        <div>
-          <label>ステータス:</label>
-          <select value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="pending">保留</option>
-            <option value="approved">承認済み</option>
-            <option value="rejected">拒否</option>
-            <option value="completed">完了</option>
+        </label>
+        <label>
+          ステータス:
+          <select name="status" value={formData.status} onChange={handleInputChange}>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="completed">Completed</option>
           </select>
-        </div>
-        <div>
-          <label>サプライヤー情報:</label>
+        </label>
+        <label>
+          サプライヤー情報:
           <input
             type="text"
-            value={supplierInfo}
-            onChange={(e) => setSupplierInfo(e.target.value)}
-            required
+            name="supplier_info"
+            value={formData.supplier_info}
+            onChange={handleInputChange}
           />
-        </div>
+        </label>
         <button type="submit">更新</button>
       </form>
     </div>
