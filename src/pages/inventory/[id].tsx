@@ -1,81 +1,63 @@
-import React, { useEffect, useState } from 'react';
+// pages/inventory/[id].tsx
 import { useRouter } from 'next/router';
+import { useEffect, useState } from 'react';
 import api from '../../lib/api';
 
 interface InventoryItem {
   id: number;
   name: string;
-  description: string;
   current_quantity: number;
-  optimal_quantity: number;
-  manufacturer: string;
-  supplier_info: string;
-  price: number;
+  shelf_number: string;
 }
 
-const InventoryDetail: React.FC = () => {
-  const [item, setItem] = useState<InventoryItem | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+const InventoryDetailPage = () => {
   const router = useRouter();
   const { id } = router.query;
+  const [item, setItem] = useState<InventoryItem | null>(null);
 
   useEffect(() => {
-    if (!id) return;
-
-    const fetchItemDetail = async () => {
-      const authHeaders = {
-        'access-token': localStorage.getItem('access-token') || '',
-        client: localStorage.getItem('client') || '',
-        uid: localStorage.getItem('uid') || '',
+    if (id) {
+      const fetchItem = async () => {
+        try {
+          const response = await api.get(`/inventory/${id}`);
+          setItem(response.data);
+        } catch (error) {
+          console.error('Error fetching item:', error);
+        }
       };
+      fetchItem();
+    }
+  }, [id]);
 
-      if (!authHeaders.uid) {
-        router.push('/login');  // ログインしていない場合はリダイレクト
-        return;
-      }
-
+  const handleDelete = async () => {
+    const confirmDelete = confirm('このアイテムを削除してもよろしいですか？');
+    if (confirmDelete && id) {
       try {
-        const response = await api.get(`/inventory/${id}`, {
-          headers: authHeaders,
-        });
-        setItem(response.data);
-        setLoading(false);
-      } catch (err) {
-        console.error('Error fetching item details:', err);
-        setError('アイテム情報の取得に失敗しました。');
-        setLoading(false);
+        await api.delete(`/inventory/${id}`);
+        alert('アイテムが削除されました');
+        router.push('/inventory');
+      } catch (error) {
+        console.error('Error deleting item:', error);
+        alert('削除に失敗しました');
       }
-    };
-
-    fetchItemDetail();
-  }, [id, router]);
-
-  if (loading) {
-    return <div>読み込み中...</div>;
-  }
-
-  if (error) {
-    return <div style={{ color: 'red' }}>{error}</div>;
-  }
+    }
+  };
 
   if (!item) {
-    return <div>アイテムが見つかりませんでした。</div>;
+    return <div>Loading...</div>;
   }
 
   return (
     <div>
-      <h1>{item.name}</h1>
-      <p>説明: {item.description}</p>
-      <p>在庫数: {item.current_quantity}</p>
-      <p>最適在庫数: {item.optimal_quantity}</p>
-      <p>製造元: {item.manufacturer}</p>
-      <p>仕入先情報: {item.supplier_info}</p>
-      <p>価格: ¥{item.price.toLocaleString()}</p>
-
-      <button onClick={() => router.push('/inventory')}>戻る</button>
+      <h1>在庫詳細 - {item.name}</h1>
+      <p>数量: {item.current_quantity}</p>
+      <p>棚番号: {item.shelf_number}</p>
+      <button onClick={() => router.push(`/inventory/${item.id}/edit`)}>編集</button>
+      <button onClick={handleDelete} style={{ color: 'red', marginLeft: '10px' }}>
+        削除
+      </button>
     </div>
   );
 };
 
-export default InventoryDetail;
+export default InventoryDetailPage;
