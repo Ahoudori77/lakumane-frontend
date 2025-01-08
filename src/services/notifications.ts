@@ -8,7 +8,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/a
  */
 export const getNotifications = async (page: number, authHeaders: Record<string, string>) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/notifications`, {
+    const response = await axios.get(`http://localhost:3000/api/v1/notifications`, {
       headers: authHeaders,
       params: { page }, // ページ番号をリクエストパラメータとして追加
     });
@@ -43,7 +43,7 @@ export const getUnreadNotifications = async (authHeaders: Record<string, string>
     console.log('API_BASE_URL:', API_BASE_URL);
     console.log('authHeaders:', authHeaders);
 
-    const response = await axios.get(`${API_BASE_URL}/notifications/unread`, { headers: authHeaders });
+    const response = await axios.get(`http://localhost:3000/api/v1/notifications/unread`, { headers: authHeaders });
     return response.data;
   } catch (error) {
     console.error('Error fetching unread notifications:', error);
