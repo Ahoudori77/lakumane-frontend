@@ -1,7 +1,7 @@
-// pages/orders/[id].tsx
 import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import api from '../../lib/api';
+import { AxiosError } from 'axios';
 
 interface Order {
   id: number;
@@ -33,7 +33,14 @@ const OrderDetailPage = () => {
             supplier_info: response.data.supplier_info,
           });
         } catch (error) {
-          console.error('Error fetching order:', error);
+          const axiosError = error as AxiosError;
+          if (axiosError.response?.status === 404) {
+            alert('発注が見つかりません。');
+            router.push('/orders');
+          } else {
+            console.error('Error fetching order:', error);
+            alert('発注の取得に失敗しました。');
+          }
         }
       };
       fetchOrder();

@@ -1,7 +1,7 @@
-// pages/inventory/[id]/edit.tsx
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import api from '../../../lib/api';
+import { AxiosError } from 'axios';
 
 interface InventoryItem {
   id: number;
@@ -14,8 +14,11 @@ interface InventoryItem {
 const EditInventoryPage = () => {
   const router = useRouter();
   const { id } = router.query;
+
+  // 初期状態の型をInventoryItemに変更
   const [item, setItem] = useState<InventoryItem | null>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<InventoryItem>({
+    id: 0,
     name: '',
     description: '',
     current_quantity: 0,
@@ -30,13 +33,21 @@ const EditInventoryPage = () => {
           const response = await api.get(`/inventory/${id}`);
           setItem(response.data);
           setFormData({
+            id: response.data.id,
             name: response.data.name,
             description: response.data.description,
             current_quantity: response.data.current_quantity,
             shelf_number: response.data.shelf_number,
           });
         } catch (error) {
-          console.error('Error fetching item:', error);
+          const axiosError = error as AxiosError;
+          if (axiosError.response?.status === 404) {
+            alert('在庫が見つかりません。');
+            router.push('/inventory');  // 在庫一覧にリダイレクト
+          } else {
+            console.error('在庫の取得に失敗しました:', error);
+            alert('在庫の取得中にエラーが発生しました。');
+          }
         }
       };
       fetchItem();
@@ -46,14 +57,18 @@ const EditInventoryPage = () => {
   // フォームの変更をハンドリング
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   // フォームの送信処理
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await api.put(`/inventory/${id}`, formData);
+      await api.put(`/inventory/${id}`, {
+        inventory: {
+          quantity: formData.current_quantity,
+        }
+      });
       alert('アイテムが更新されました');
       router.push(`/inventory/${id}`);
     } catch (error) {
