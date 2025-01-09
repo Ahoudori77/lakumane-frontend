@@ -1,19 +1,13 @@
-import { useRouter } from 'next/router';
+import { useState } from 'react';
 
 const Header = () => {
-  const router = useRouter();
-
-  const handleLogout = () => {
-    alert('ログアウトしました');
-    router.push('/login');
-  };
+  const [user] = useState({ name: '山田太郎' }); // 仮のユーザー情報
 
   return (
-    <header className="header">
+    <div className="header">
       <h1>在庫管理システム</h1>
       <div className="user-info">
-        <span>山田太郎</span>
-        <button onClick={handleLogout}>ログアウト</button>
+        <span>{user.name}</span>
       </div>
       <style jsx>{`
         .header {
@@ -21,24 +15,13 @@ const Header = () => {
           justify-content: space-between;
           align-items: center;
           padding: 10px 20px;
-          background-color: #f4f4f4;
+          background: #f5f5f5;
         }
         .user-info {
-          display: flex;
-          align-items: center;
-        }
-        .user-info span {
-          margin-right: 15px;
-        }
-        button {
-          padding: 5px 10px;
-          border: none;
-          background-color: #d9534f;
-          color: white;
-          cursor: pointer;
+          font-size: 16px;
         }
       `}</style>
-    </header>
+    </div>
   );
 };
 

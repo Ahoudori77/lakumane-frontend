@@ -1,67 +1,44 @@
 import Link from 'next/link';
-import { useState } from 'react';
+import { useRouter } from 'next/router';
 
 const Sidebar = () => {
-  const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
 
-  const toggleSidebar = () => {
-    setIsOpen(!isOpen);
-  };
+  const menuItems = [
+    { path: '/', label: 'ダッシュボード' },
+    { path: '/inventory', label: '在庫管理' },
+    { path: '/orders', label: '発注管理' },
+    { path: '/usage_records', label: '使用履歴' },
+  ];
 
   return (
-    <div>
-      <button onClick={toggleSidebar} className="menu-btn">
-        ☰
-      </button>
-      <div className={`sidebar ${isOpen ? 'open' : ''}`}>
-        <nav>
-          <ul>
-            <li>
-              <Link href="/dashboard">ダッシュボード</Link>
-            </li>
-            <li>
-              <Link href="/inventory">在庫一覧</Link>
-            </li>
-            <li>
-              <Link href="/orders">発注管理</Link>
-            </li>
-            <li>
-              <Link href="/notifications">通知</Link>
-            </li>
-          </ul>
-        </nav>
-      </div>
+    <div className="sidebar">
+      <h2>メニュー</h2>
+      <ul>
+        {menuItems.map((item) => (
+          <li key={item.path} className={router.pathname === item.path ? 'active' : ''}>
+            <Link href={item.path}>{item.label}</Link>
+          </li>
+        ))}
+      </ul>
       <style jsx>{`
-        .menu-btn {
-          font-size: 24px;
-          background: none;
-          border: none;
-          cursor: pointer;
-        }
         .sidebar {
-          position: fixed;
-          top: 0;
-          left: -250px;
           width: 250px;
-          height: 100%;
-          background-color: #333;
+          height: 100vh;
+          background: #333;
           color: white;
-          transition: left 0.3s;
-        }
-        .sidebar.open {
-          left: 0;
-        }
-        nav ul {
-          list-style: none;
           padding: 20px;
+          position: fixed;
         }
-        nav ul li {
+        ul {
+          list-style: none;
+          padding: 0;
+        }
+        li {
           margin: 20px 0;
         }
-        nav ul li a {
-          color: white;
-          text-decoration: none;
-          font-size: 18px;
+        .active {
+          font-weight: bold;
         }
       `}</style>
     </div>
