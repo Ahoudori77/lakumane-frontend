@@ -8,14 +8,19 @@ interface InventoryItem {
   id: number;
   name: string;
   shelf_number: string;
-  attribute: string;
-  manufacturer: string;
+  attribute?: string;
+  manufacturer?: string;
   current_quantity: number;
   optimal_quantity: number;
   reorder_threshold: number;
-  unit_price: number; // 単価追加
+  unit_price: number;
   unit: string;
+  item?: {
+    name: string;
+    manufacturer: string;
+  };
 }
+
 
 const InventoryList: React.FC = () => {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
@@ -52,11 +57,16 @@ const InventoryList: React.FC = () => {
             ...searchFilters,
           },
         });
-        setInventory(response.data);
+
+        // レスポンスから配列型データを抽出
+        const inventoryData = response.data.data || response.data;
+        setInventory(inventoryData); // ここでデータを設定
       } catch (error) {
         console.error("Error fetching inventory:", error);
+        setInventory([]); // エラー時に空配列を設定
       }
     };
+
 
     fetchInventory();
   }, [router, currentPage, searchFilters]);
@@ -75,6 +85,28 @@ const InventoryList: React.FC = () => {
       ...searchFilters,
       [e.target.name]: e.target.value,
     });
+  };
+
+  const handleDelete = async (id: number) => {
+    const confirmDelete = window.confirm("本当にこのアイテムを削除しますか？");
+    if (confirmDelete) {
+      try {
+        const authHeaders = {
+          "access-token": localStorage.getItem("access-token") || "",
+          client: localStorage.getItem("client") || "",
+          uid: localStorage.getItem("uid") || "",
+        };
+
+        await api.delete(`/inventory/${id}`, { headers: authHeaders });
+        alert("アイテムを削除しました");
+
+        // アイテムを一覧から削除
+        setInventory((prevInventory) => prevInventory.filter((item) => item.id !== id));
+      } catch (error) {
+        console.error("削除エラー:", error);
+        alert("アイテムの削除に失敗しました");
+      }
+    }
   };
 
   return (
@@ -143,16 +175,12 @@ const InventoryList: React.FC = () => {
                     <span>在庫あり</span>
                   )}
                 </td>
-                <td className="px-4 py-2">{item.shelf_number}</td>
-                <td className="px-4 py-2">{item.attribute}</td>
-                <td className="px-4 py-2">
-                  <Link href={`/inventory/${item.id}`} className="text-blue-500 underline">
-                    {item.name}
-                  </Link>
-                </td>
-                <td className="px-4 py-2">{item.manufacturer}</td>
-                <td className="px-4 py-2">{item.optimal_quantity}</td>
-                <td className="px-4 py-2">{item.current_quantity}</td>
+                <td className="px-4 py-2">{item.shelf_number || "不明"}</td>
+                <td className="px-4 py-2">{item.attribute || "不明"}</td>
+                <td className="px-4 py-2">{item.item?.name || "不明"}</td>
+                <td className="px-4 py-2">{item.item?.manufacturer || "不明"}</td>
+                <td className="px-4 py-2">{item.optimal_quantity || "-"}</td>
+                <td className="px-4 py-2">{item.current_quantity || "-"}</td>
                 <td className="px-4 py-2">
                   {item.unit_price !== null && item.unit_price !== undefined
                     ? item.unit_price.toLocaleString()
@@ -164,7 +192,7 @@ const InventoryList: React.FC = () => {
                   </Link>
                   <button
                     className="bg-red-500 text-white px-2 py-1 rounded"
-                    onClick={() => console.log(`削除: ${item.id}`)}
+                    onClick={() => handleDelete(item.id)}
                   >
                     削除
                   </button>
