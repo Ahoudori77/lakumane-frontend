@@ -15,8 +15,6 @@ const EditInventoryPage = () => {
   const router = useRouter();
   const { id } = router.query;
 
-  // 初期状態の型をInventoryItemに変更
-  const [item, setItem] = useState<InventoryItem | null>(null);
   const [formData, setFormData] = useState<InventoryItem>({
     id: 0,
     name: '',
@@ -25,34 +23,29 @@ const EditInventoryPage = () => {
     shelf_number: '',
   });
 
+  const [loading, setLoading] = useState(true);
+
   // アイテムデータを取得してフォームにセット
   useEffect(() => {
     if (id) {
       const fetchItem = async () => {
         try {
           const response = await api.get(`/inventory/${id}`);
-          setItem(response.data);
-          setFormData({
-            id: response.data.id,
-            name: response.data.name,
-            description: response.data.description,
-            current_quantity: response.data.current_quantity,
-            shelf_number: response.data.shelf_number,
-          });
+          setFormData(response.data);
+          setLoading(false);
         } catch (error) {
           const axiosError = error as AxiosError;
           if (axiosError.response?.status === 404) {
             alert('在庫が見つかりません。');
-            router.push('/inventory');  // 在庫一覧にリダイレクト
           } else {
-            console.error('在庫の取得に失敗しました:', error);
             alert('在庫の取得中にエラーが発生しました。');
           }
+          router.push('/inventory');
         }
       };
       fetchItem();
     }
-  }, [id]);
+  }, [id, router]);
 
   // フォームの変更をハンドリング
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -67,64 +60,77 @@ const EditInventoryPage = () => {
       await api.put(`/inventory/${id}`, {
         inventory: {
           quantity: formData.current_quantity,
-        }
+          name: formData.name,
+          description: formData.description,
+          shelf_number: formData.shelf_number,
+        },
       });
       alert('アイテムが更新されました');
-      router.push(`/inventory/${id}`);
+      router.push('/inventory');
     } catch (error) {
-      console.error('Error updating item:', error);
-      alert('更新に失敗しました');
+      console.error('更新エラー:', error);
+      alert('更新に失敗しました。入力値を確認してください。');
     }
   };
+  
 
-  if (!item) {
-    return <div>Loading...</div>;
+  if (loading) {
+    return <div>読み込み中...</div>;
   }
 
   return (
-    <div>
-      <h1>在庫編集 - {item.name}</h1>
-      <form onSubmit={handleSubmit}>
+    <div className="p-4">
+      <h1 className="text-xl font-bold mb-4">在庫編集 - {formData.name}</h1>
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label>アイテム名:</label>
+          <label className="block text-gray-700">アイテム名:</label>
           <input
             type="text"
             name="name"
             value={formData.name}
             onChange={handleChange}
+            className="w-full border rounded px-2 py-1"
             required
           />
         </div>
         <div>
-          <label>説明:</label>
+          <label className="block text-gray-700">説明:</label>
           <textarea
             name="description"
             value={formData.description}
             onChange={handleChange}
+            className="w-full border rounded px-2 py-1"
             required
           />
         </div>
         <div>
-          <label>数量:</label>
+          <label className="block text-gray-700">数量:</label>
           <input
             type="number"
             name="current_quantity"
             value={formData.current_quantity}
             onChange={handleChange}
+            className="w-full border rounded px-2 py-1"
             required
           />
         </div>
         <div>
-          <label>棚番号:</label>
+          <label className="block text-gray-700">棚番号:</label>
           <input
             type="text"
             name="shelf_number"
             value={formData.shelf_number}
             onChange={handleChange}
+            className="w-full border rounded px-2 py-1"
             required
           />
         </div>
-        <button type="submit">更新</button>
+        <button
+          type="submit"
+          className="bg-blue-500 text-white px-4 py-2 rounded"
+        >
+          更新
+        </button>
       </form>
     </div>
   );

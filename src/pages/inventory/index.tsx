@@ -77,6 +77,28 @@ const InventoryList: React.FC = () => {
     });
   };
 
+  const handleDelete = async (id: number) => {
+    const confirmDelete = window.confirm('本当にこのアイテムを削除しますか？');
+    if (confirmDelete) {
+      try {
+        const authHeaders = {
+          'access-token': localStorage.getItem('access-token') || '',
+          client: localStorage.getItem('client') || '',
+          uid: localStorage.getItem('uid') || '',
+        };
+  
+        await api.delete(`/inventory/${id}`, { headers: authHeaders });
+        alert('アイテムを削除しました');
+  
+        // アイテムを一覧から削除
+        setInventory((prevInventory) => prevInventory.filter((item) => item.id !== id));
+      } catch (error) {
+        console.error('削除エラー:', error);
+        alert('アイテムの削除に失敗しました');
+      }
+    }
+  };
+
   return (
     <div className="p-4">
       {/* 検索フィルター */}
@@ -164,8 +186,8 @@ const InventoryList: React.FC = () => {
                   </Link>
                   <button
                     className="bg-red-500 text-white px-2 py-1 rounded"
-                    onClick={() => console.log(`削除: ${item.id}`)}
-                  >
+                    onClick={() => handleDelete(item.id)}
+                    >
                     削除
                   </button>
                 </td>
