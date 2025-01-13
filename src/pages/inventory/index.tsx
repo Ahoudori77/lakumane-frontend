@@ -168,6 +168,34 @@ const InventoryList: React.FC = () => {
     }
   };
 
+  const handleExportCSV = async () => {
+    try {
+      const authHeaders = {
+        "access-token": localStorage.getItem("access-token") || "",
+        client: localStorage.getItem("client") || "",
+        uid: localStorage.getItem("uid") || "",
+      };
+  
+      const response = await api.get("/inventory/export", {
+        headers: authHeaders,
+        params: searchFilters, // 現在の検索条件を渡す
+        responseType: "blob", // ファイルとして受け取る
+      });
+  
+      // ダウンロード用のリンクを作成してクリック
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "inventory_export.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error("CSVエクスポートエラー:", error);
+      alert("CSVエクスポートに失敗しました");
+    }
+  };
+
   return (
     <div className="p-4">
       {/* 検索フィルター */}
@@ -186,10 +214,10 @@ const InventoryList: React.FC = () => {
                 id={key}
                 type="text"
                 name={key}
-                value={searchInputs[key as keyof typeof searchInputs] || ""} // 初期値を空文字列に設定
+                value={searchInputs[key as keyof typeof searchInputs]}
                 onChange={handleSearchInputChange}
                 className="w-full border rounded px-2 py-1"
-                placeholder={`${key}を入力`}
+                placeholder={`${key}を入力 (部分一致可)`}
               />
             </div>
           ))}
@@ -203,6 +231,15 @@ const InventoryList: React.FC = () => {
             検索
           </button>
         </div>
+      </div>
+
+      <div className="mt-4 text-right">
+        <button
+          onClick={handleExportCSV}
+          className="bg-green-500 text-white px-4 py-2 rounded mr-2"
+        >
+          CSVエクスポート
+        </button>
       </div>
 
       {/* テーブル */}
