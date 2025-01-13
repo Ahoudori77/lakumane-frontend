@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import api from "../../lib/api";
 import Link from "next/link";
-import { Search, ChevronUp, ChevronDown, AlertTriangle } from "lucide-react";
+import { Search, ChevronUp, ChevronDown } from "lucide-react";
 
 interface InventoryItem {
   id: number;
@@ -21,18 +21,30 @@ interface InventoryItem {
   };
 }
 
-
 const InventoryList: React.FC = () => {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
-  const [sortConfig, setSortConfig] = useState<{ key: keyof InventoryItem; direction: "asc" | "desc" } | null>(null);
+  const [sortConfig, setSortConfig] = useState<{
+    key: keyof InventoryItem | "発注状況";
+    direction: "asc" | "desc";
+  } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  // 検索条件と検索入力を分けて管理
   const [searchFilters, setSearchFilters] = useState({
     shelfNumber: "",
-    attribute: "",
+    item_attribute: "",
     itemName: "",
     manufacturer: "",
   });
+
+  const [searchInputs, setSearchInputs] = useState({
+    shelfNumber: "",
+    item_attribute: "",
+    itemName: "",
+    manufacturer: "",
+  });
+
   const router = useRouter();
 
   useEffect(() => {
@@ -49,36 +61,85 @@ const InventoryList: React.FC = () => {
           return;
         }
 
-        const response = await api.get("/inventory", {
-          headers: authHeaders,
-          params: {
+        // 空の値を除外してリクエストパラメータを構築
+        const filteredParams = Object.fromEntries(
+          Object.entries({
             page: currentPage,
             per_page: itemsPerPage,
-            ...searchFilters,
-          },
+            shelf_number: searchFilters.shelfNumber,
+            attribute: searchFilters.item_attribute, // 修正箇所
+            item_name: searchFilters.itemName,
+            manufacturer: searchFilters.manufacturer,
+          }).filter(([_, value]) => value !== "") // 空文字列を除外
+        );
+
+        const response = await api.get("/inventory", {
+          headers: authHeaders,
+          params: filteredParams,
         });
 
-        // レスポンスから配列型データを抽出
         const inventoryData = response.data.data || response.data;
-        setInventory(inventoryData); // ここでデータを設定
+        setInventory(inventoryData);
       } catch (error) {
         console.error("Error fetching inventory:", error);
-        setInventory([]); // エラー時に空配列を設定
+        setInventory([]); // エラー時は空配列を設定
       }
     };
-
 
     fetchInventory();
   }, [router, currentPage, searchFilters]);
 
-  const handleSort = (key: keyof InventoryItem) => {
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchInputs({
+      ...searchInputs,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleSearchSubmit = () => {
+    setSearchFilters({ ...searchInputs }); // 入力値を検索条件に反映
+    setCurrentPage(1); // ページをリセット
+  };
+
+  const handleSort = (key: keyof InventoryItem | "発注状況") => {
     setSortConfig((prev) => {
       if (prev?.key === key && prev?.direction === "asc") {
         return { key, direction: "desc" };
       }
       return { key, direction: "asc" };
     });
+
+    const sortedInventory = [...inventory];
+    sortedInventory.sort((a, b) => {
+      // 発注状況のカスタムソートロジック
+      if (key === "発注状況") {
+        const aNeedsRestock = a.current_quantity <= a.reorder_threshold ? 1 : 0;
+        const bNeedsRestock = b.current_quantity <= b.reorder_threshold ? 1 : 0;
+        return sortConfig?.direction === "asc"
+          ? aNeedsRestock - bNeedsRestock
+          : bNeedsRestock - aNeedsRestock;
+      }
+
+      // アイテム名やメーカー名のソートロジック
+      if (key === "name" || key === "manufacturer") {
+        const aValue = key === "name" ? a.item?.name || "" : a.item?.manufacturer || "";
+        const bValue = key === "name" ? b.item?.name || "" : b.item?.manufacturer || "";
+        if (aValue < bValue) return sortConfig?.direction === "asc" ? -1 : 1;
+        if (aValue > bValue) return sortConfig?.direction === "asc" ? 1 : -1;
+        return 0;
+      }
+
+      // 他のフィールドの通常のソートロジック
+      const aValue = a[key] || "";
+      const bValue = b[key] || "";
+      if (aValue < bValue) return sortConfig?.direction === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortConfig?.direction === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    setInventory(sortedInventory);
   };
+
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchFilters({
@@ -99,8 +160,6 @@ const InventoryList: React.FC = () => {
 
         await api.delete(`/inventory/${id}`, { headers: authHeaders });
         alert("アイテムを削除しました");
-
-        // アイテムを一覧から削除
         setInventory((prevInventory) => prevInventory.filter((item) => item.id !== id));
       } catch (error) {
         console.error("削除エラー:", error);
@@ -127,8 +186,8 @@ const InventoryList: React.FC = () => {
                 id={key}
                 type="text"
                 name={key}
-                value={searchFilters[key as keyof typeof searchFilters]}
-                onChange={handleSearchChange}
+                value={searchInputs[key as keyof typeof searchInputs] || ""} // 初期値を空文字列に設定
+                onChange={handleSearchInputChange}
                 className="w-full border rounded px-2 py-1"
                 placeholder={`${key}を入力`}
               />
@@ -137,7 +196,7 @@ const InventoryList: React.FC = () => {
         </div>
         <div className="mt-4 text-right">
           <button
-            onClick={() => setCurrentPage(1)}
+            onClick={handleSearchSubmit} // 検索ボタンで実行
             className="bg-blue-500 text-white px-4 py-2 rounded"
           >
             <Search className="inline h-5 w-5 mr-1" />
@@ -151,17 +210,26 @@ const InventoryList: React.FC = () => {
         <table className="w-full table-auto">
           <thead>
             <tr>
-              <th className="px-4 py-2">発注状況</th>
-              <th className="px-4 py-2 cursor-pointer" onClick={() => handleSort("shelf_number")}>
-                棚番
-                {sortConfig?.key === "shelf_number" && (sortConfig.direction === "asc" ? <ChevronUp /> : <ChevronDown />)}
-              </th>
-              <th className="px-4 py-2">属性</th>
-              <th className="px-4 py-2">アイテム名</th>
-              <th className="px-4 py-2">メーカー名</th>
-              <th className="px-4 py-2">適正在庫数</th>
-              <th className="px-4 py-2">現在の在庫数</th>
-              <th className="px-4 py-2">単価 (円)</th>
+              {[
+                { key: "発注状況", label: "発注状況" },
+                { key: "shelf_number", label: "棚番" },
+                { key: "attribute", label: "属性" },
+                { key: "name", label: "アイテム名" },
+                { key: "manufacturer", label: "メーカー名" },
+                { key: "optimal_quantity", label: "適正在庫数" },
+                { key: "current_quantity", label: "現在の在庫数" },
+                { key: "unit_price", label: "単価 (円)" },
+              ].map(({ key, label }) => (
+                <th
+                  key={key}
+                  className="px-4 py-2 cursor-pointer"
+                  onClick={() => handleSort(key as keyof InventoryItem | "発注状況")}
+                >
+                  {label}
+                  {sortConfig?.key === key &&
+                    (sortConfig.direction === "asc" ? <ChevronUp /> : <ChevronDown />)}
+                </th>
+              ))}
               <th className="px-4 py-2">操作</th>
             </tr>
           </thead>
@@ -200,7 +268,6 @@ const InventoryList: React.FC = () => {
               </tr>
             ))}
           </tbody>
-
         </table>
 
         {/* ページネーション */}
