@@ -17,6 +17,7 @@ interface InventoryItem {
 }
 
 const EditInventoryPage = () => {
+
   const router = useRouter();
   const { id } = router.query;
 

@@ -1,18 +1,17 @@
-import axios from 'axios';
+import axios from "axios";
+
+// クライアントサイドかどうかをチェック
+const isBrowser = typeof window !== "undefined";
 
 const api = axios.create({
-  baseURL: 'http://localhost:3000/api/v1',
+  baseURL: "http://localhost:3000/api/v1",
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('access-token');
-  const client = localStorage.getItem('client');
-  const uid = localStorage.getItem('uid');
-
-  if (token) {
-    config.headers['access-token'] = token;
-    config.headers['client'] = client;
-    config.headers['uid'] = uid;
+  if (typeof window !== "undefined") {
+    config.headers["access-token"] = localStorage.getItem("access-token") || "";
+    config.headers["client"] = localStorage.getItem("client") || "";
+    config.headers["uid"] = localStorage.getItem("uid") || "";
   }
   return config;
 });
